@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "TypeTreeDumper.Bootstrapper": {
+      "commandName": "Project",
+      "commandLineArgs": "-v D:\\genshinimpactre\\1.5-dev\\YuanShen.exe",
+      "nativeDebugging": true
+    }
+  }
+}

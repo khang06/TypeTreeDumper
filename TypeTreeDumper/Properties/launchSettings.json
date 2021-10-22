@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TypeTreeDumper": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

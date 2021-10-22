@@ -25,8 +25,12 @@ namespace Unity
 
             public V5_3(ManagedTypeTree owner, SymbolResolver resolver)
             {
+                /*
                 var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@@Z");
                 var label = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
+                */
+                var constructor = Marshal.GetDelegateForFunctionPointer<TypeTreeDelegate>(resolver.PlayerBase + 0xF528D0);
+                var label = (MemLabelId*)(resolver.PlayerBase + 0x265F408);
                 constructor.Invoke(out Tree, label);
             }
 

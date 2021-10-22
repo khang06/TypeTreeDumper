@@ -12,6 +12,9 @@ namespace Unity
 
         public abstract IEnumerable<string> FindSymbolsMatching(Regex expression);
 
+        // TODO: this is an awful way of going about this
+        public IntPtr PlayerBase = IntPtr.Zero;
+
         public IntPtr Resolve(string name)
         {
             if (TryResolve(name, out IntPtr address))

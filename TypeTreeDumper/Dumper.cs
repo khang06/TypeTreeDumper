@@ -106,6 +106,7 @@ namespace TypeTreeDumper
             Logger.Verb("Writing runtime types...");
             foreach(var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
             {
+
                 var iter = type;
 
                 Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
@@ -132,6 +133,9 @@ namespace TypeTreeDumper
                     iter.Module,
                     iter.PersistentTypeID
                 );
+
+                if (iter.PersistentTypeID == PersistentTypeID.MonoManager)
+                    continue;
 
                 Logger.Verb("[{0}] Producing native object...", typeCount);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);
@@ -207,6 +211,21 @@ namespace TypeTreeDumper
                     iter.Module,
                     iter.PersistentTypeID
                 );
+
+                // TODO: not sure why these break it
+                /*
+                if (iter.PersistentTypeID == PersistentTypeID.Texture2D ||
+                    iter.PersistentTypeID == PersistentTypeID.RenderTexture ||
+                    iter.PersistentTypeID == PersistentTypeID.CustomRenderTexture ||
+                    iter.PersistentTypeID == PersistentTypeID.Cubemap ||
+                    iter.PersistentTypeID == PersistentTypeID.MonoManager ||
+                    iter.PersistentTypeID == PersistentTypeID.Texture3D ||
+                    iter.PersistentTypeID == PersistentTypeID.MovieTexture ||
+                    iter.PersistentTypeID == PersistentTypeID.WebCamTexture)
+                    continue;
+                */
+                if (iter.PersistentTypeID == PersistentTypeID.MonoManager)
+                    continue;
 
                 Logger.Verb("[{0}] Producing native object...", typeCount);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);

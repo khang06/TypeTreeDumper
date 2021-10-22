@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Unity
 {
@@ -45,7 +47,8 @@ namespace Unity
 
         readonly ProduceDelegateV2017_2 s_ProduceV2017_2;
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV2017_2(ref byte a, ref byte b, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        delegate IntPtr ProduceDelegateV2017_2(IntPtr a, ref byte b, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        //delegate IntPtr ProduceDelegateV2017_2(ref byte a, ref byte b, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
 
         readonly InstanceIDToObjectDelegate s_InstanceIDToObject;
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -68,17 +71,23 @@ namespace Unity
             this.version  = version;
             this.resolver = resolver;
             
-            if (HasGetSpriteAtlasDatabase)
-                s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
+            // doesn't seem to exist
+            //if (HasGetSpriteAtlasDatabase)
+            //    s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
 
             if (HasGetSceneVisibilityState)
                 s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>($"?GetSceneVisibilityState@@YAA{NameMangling.Ptr64}AVSceneVisibilityState@@XZ");
 
+            // also doesn't seem to exist
+            /*
             s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
             s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
             s_GetAnnotationManager      = resolver.ResolveFunction<GetAnnotationManagerDelegate>($"?GetAnnotationManager@@YAA{NameMangling.Ptr64}AVAnnotationManager@@XZ");
             s_GetMonoManager            = resolver.ResolveFunction<GetMonoManagerDelegate>($"?GetMonoManager@@YAA{NameMangling.Ptr64}AVMonoManager@@XZ");
+            */
+            s_GetMonoManager = Marshal.GetDelegateForFunctionPointer<GetMonoManagerDelegate>(resolver.PlayerBase + 0xF097C0);
 
+            /*
             if (version < UnityVersion.Unity3_5)
                 s_ProduceV3_4 = resolver.ResolveFunction<ProduceDelegateV3_4>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHP{NameMangling.Ptr64}AVBaseAllocator@@W4ObjectCreationMode@@@Z");
             else if (version < UnityVersion.Unity5_5)
@@ -87,6 +96,8 @@ namespace Unity
                 s_ProduceV5_5 = resolver.ResolveFunction<ProduceDelegateV5_5>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
             else
                 s_ProduceV2017_2 = resolver.ResolveFunction<ProduceDelegateV2017_2>($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+            */
+            s_ProduceV2017_2 = Marshal.GetDelegateForFunctionPointer<ProduceDelegateV2017_2>(resolver.PlayerBase + 0x7C0990);
 
             if (version < UnityVersion.Unity5_5)
             {
@@ -97,8 +108,12 @@ namespace Unity
             }
             else if (version < UnityVersion.Unity2019_2)
             {
+                /*
                 s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
                 s_DestroyImmediate   = resolver.ResolveFunction<DestroyImmediateDelegate>($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z");
+                */
+                s_InstanceIDToObject = Marshal.GetDelegateForFunctionPointer<InstanceIDToObjectDelegate>(resolver.PlayerBase + 0x7C0270);
+                s_DestroyImmediate = Marshal.GetDelegateForFunctionPointer<DestroyImmediateDelegate>(resolver.PlayerBase + 0xFC5A80);
             }
             else
             {
@@ -108,10 +123,13 @@ namespace Unity
 
             if (version >= UnityVersion.Unity3_5)
             {
+                /*
                 kMemBaseObject = resolver.Resolve<MemLabelId>(
                     "?kMemBaseObject@@3UMemLabelId@@A",
                     "?kMemBaseObject@@3UkMemBaseObjectStruct@@A"
                 );
+                */
+                kMemBaseObject = (MemLabelId*)(resolver.PlayerBase + 0x265F298);
             }
         }
 
@@ -140,6 +158,7 @@ namespace Unity
             return new NativeObject(s_GetMonoManager(), this, PersistentTypeID.MonoManager, version);
         }
 
+        [HandleProcessCorruptedStateExceptionsAttribute]
         public NativeObject Produce(in RuntimeTypeInfo type, int instanceID, ObjectCreationMode creationMode)
         {
             // TODO: Support producing abstract types. To do this, the following steps are necessary:
@@ -154,7 +173,15 @@ namespace Unity
             if (type.IsAbstract)
                 return null;
 
-            IntPtr ptr;
+            /*
+            if (type.PersistentTypeID == PersistentTypeID.ProceduralMaterial)
+            {
+                Console.WriteLine("Attach your debugger now!!!!!");
+                Thread.Sleep(5000);
+            }
+            */
+
+            IntPtr ptr = IntPtr.Zero;
             if (version < UnityVersion.Unity3_5)
             {
                 ptr = s_ProduceV3_4((int)type.PersistentTypeID, instanceID, IntPtr.Zero, creationMode);
@@ -169,8 +196,8 @@ namespace Unity
             }
             else
             {
-                // TODO: Why does this take two types?
-                ptr = s_ProduceV2017_2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
+                //ptr = s_ProduceV2017_2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
+                ptr = s_ProduceV2017_2(resolver.PlayerBase + 0x26496E0, ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
             }
             if (ptr == IntPtr.Zero) return null;
             return new NativeObject(ptr, this, type.PersistentTypeID, version);

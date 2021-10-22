@@ -33,11 +33,14 @@ namespace Unity
                 getTypeTree = resolver.ResolveFunction<GetTypeTreeDelegate>($"?GetTypeTree@TypeTreeCache@@YA_NP{NameMangling.Ptr64}BVObject@@W4TransferInstructionFlags@@A{NameMangling.Ptr64}AVTypeTree@@@Z");
             else
             {
+                /*
                 generateTypeTree = resolver.ResolveFunction<GenerateTypeTreeDelegate>(
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}BVObject@@A{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@H@Z"
                 );
+                */
+                generateTypeTree = Marshal.GetDelegateForFunctionPointer<GenerateTypeTreeDelegate>(resolver.PlayerBase + 0xF540B0);
             }
         }
 

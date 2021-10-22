@@ -14,6 +14,8 @@ namespace TypeTreeDumper
     {
         static ProcessModule module;
 
+        static ProcessModule unityPlayer;
+
         static DiaSymbolResolver resolver;
 
         static event Action OnEngineInitialized;
@@ -97,27 +99,46 @@ namespace TypeTreeDumper
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
 
+                var proc = Process.GetCurrentProcess();
+                for (int i = 0; i < proc.Modules.Count; i++)
+                {
+                    var mod = proc.Modules[i];
+                    if (mod.ModuleName == "UnityPlayer.dll")
+                        unityPlayer = mod;
+                }
+                if (unityPlayer == null)
+                    throw new Exception("couldn't find UnityPlayer.dll loaded in memory");
+                resolver.PlayerBase = unityPlayer.BaseAddress;
+
                 if (VersionInfo.FileMajorPart == 2017)
                 {
+                    // doesn't exist
+                    /*
                     if (resolver.TryResolve($"?Initialize@Api@PackageManager@@I{NameMangling.Ptr64}AAXXZ", out address))
                     {
                         InitializePackageManagerHook = LocalHook.Create(address, new InitializePackageManagerDelegate(InitializePackageManager), null);
                         InitializePackageManagerHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                     }
+                    */
                 }
 
                 if (VersionInfo.FileMajorPart == 3)
                 {
                     InitializeFallbackLoader();
                 }
+                // doesn't exist
+                /*
                 else if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
                     AfterEverythingLoadedHook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
                     AfterEverythingLoadedHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
+                */
                 else
                 {
-                    address = resolver.ResolveFirstMatching(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
+                    //address = resolver.ResolveFirstMatching(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
+                    // TODO: autodetect
+                    address = unityPlayer.BaseAddress + 0xC37150;
                     PlayerInitEngineNoGraphicsHook = LocalHook.Create(address, new PlayerInitEngineNoGraphicsDelegate(PlayerInitEngineNoGraphics), null);
                     PlayerInitEngineNoGraphicsHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
@@ -167,6 +188,7 @@ namespace TypeTreeDumper
             DumperEngine dumperEngine = new DumperEngine();
             PluginManager.InitializePlugins(dumperEngine);
 
+            /*
             if (resolver.TryResolveFunction($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out GetUnityVersion))
             {
                 var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>(
@@ -187,6 +209,8 @@ namespace TypeTreeDumper
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
                 version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
+            */
+            version = new UnityVersion("2017.4.30f1 (0)");
 
             Dumper.Execute(new UnityEngine(version, resolver), new ExportOptions(OutputPath), dumperEngine);
         }

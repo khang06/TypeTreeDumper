@@ -44,6 +44,9 @@ namespace TypeTreeDumper
 
         protected override IntPtr GetAddressOrZero(string name)
         {
+            Console.WriteLine("trying to get {0}", name);
+            Console.WriteLine(Environment.StackTrace);
+
             if (cache.TryGetValue(name, out IntPtr address))
                 return address;
 

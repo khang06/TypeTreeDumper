@@ -35,7 +35,8 @@ namespace Unity
             {
                 if (version >= UnityVersion.Unity2017_3)
                 {
-                    runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
+                    //runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
+                    runtimeTypes = (NativeTypeArray*)(resolver.PlayerBase + 0x280F880);
                 }
                 else
                 {
