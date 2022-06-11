@@ -49,6 +49,9 @@ namespace TypeTreeDumper
 
             foreach (var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
             {
+                if (type.PersistentTypeID == PersistentTypeID.MonoManager)
+                    continue;
+
                 var next = new UnityClass(type);
 
                 var iter = type;
